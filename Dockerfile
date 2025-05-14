@@ -41,7 +41,7 @@ RUN apt-get update && \
 RUN locale-gen en_US.utf8
 
 # RUN git clone git://git.buildroot.net/buildroot --depth=1 --branch=2020.08 /root/buildroot
-COPY buildroot /root/buildroot
+RUN git clone git://git.buildroot.net/buildroot --depth=1 /root/buildroot
 
 WORKDIR /root/buildroot
 

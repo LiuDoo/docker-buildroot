@@ -42,8 +42,9 @@ RUN locale-gen en_US.utf8
 
 # RUN git clone git://git.buildroot.net/buildroot --depth=1 --branch=2020.08 /root/buildroot
 RUN git clone git://git.buildroot.net/buildroot --depth=1 /root/buildroot
-
+COPY systemtap.patch /root/systemtap.patch
 WORKDIR /root/buildroot
+RUN git apply ../systemtap.patch
 
 ENV O=/buildroot_output
 

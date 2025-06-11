@@ -1,6 +1,6 @@
 # Buildroot
 A Docker image for using [Buildroot][buildroot]. It can be found on [Docker
-Hub][hub].
+Hub][hub]. This version supports building multiple firmware images in parallel.
 
 ## Get started
 To get started build the Docker image.
@@ -9,31 +9,41 @@ To get started build the Docker image.
 $ docker build -t "advancedclimatesystems/buildroot" .
 ```
 
-Create a [data-only container][data-only] to use as build and download
-cache and to store your build products.
+The system will automatically create Docker volumes when needed:
+- A shared download volume `buildroot_dl` at `/root/buildroot/dl`
+- Separate output volumes for each firmware named `buildroot_output_{firmware_name}` at `/buildroot_output_{firmware_name}`
 
-``` shell
-$ docker run -i --name buildroot_output advancedclimatesystems/buildroot /bin/echo "Data only."
-```
-
-This container has 2 volumes at `/root/buildroot/dl` and `/buildroot_output`.
-Buildroot downloads al data to the first volume, the last volume is used as
-build cache, cross compiler and build results.
+Each firmware will have its own build cache, cross compiler and build results, but all will share the same download directory to save resources.
 
 ## Usage
 A small script has been provided to make using the container a little easier.
-It's located at [scripts/run.sh][run.sh]. Instructions below show how
-to build a kernel for the Raspberry Pi using the a defconfig provided by
-Buildroot.
+It's located at [scripts/run.sh][run.sh]. You must provide a firmware name as the first argument.
+Instructions below show how to build a kernel for the Raspberry Pi using the defconfig provided by Buildroot.
 
 ``` shell
-$ ./scripts/run.sh make raspberrypi2_defconfig menuconfig
-$ ./scripts/run.sh make
+$ ./scripts/run.sh rpi make raspberrypi2_defconfig menuconfig
+$ ./scripts/run.sh rpi make
 ```
 
-Build products are stored inside the container at `/buildroot_output/images`.
-Because `run.sh` mounts the local folder `images/` at this place the
+Build products are stored inside the container at `/buildroot_output_{firmware_name}/images`.
+Because `run.sh` mounts the local folder `images/` at this place, the
 build products are also stored on the host.
+
+### Building Multiple Firmware Images in Parallel
+
+You can build multiple firmware images in parallel by running multiple instances of the script with different firmware names:
+
+```shell
+# Terminal 1
+$ ./scripts/run.sh rpi make raspberrypi2_defconfig
+$ ./scripts/run.sh rpi make
+
+# Terminal 2
+$ ./scripts/run.sh qemu_arm make qemu_arm_versatile_defconfig
+$ ./scripts/run.sh qemu_arm make
+```
+
+Each firmware will have its own isolated build environment, but they will share the same download directory.
 
 ## Build with existing config
 It is possible to build from a custom configuration. To demonstrate this, the
@@ -42,26 +52,31 @@ repository contains a configuration to build a minimal root filesystem, around
 [external/configs/docker_python2_defconfig][docker_python2_defconfig].
 
 The `external/` directory contains a set of modifications for Buildroot. The
-modifications can be apllied with the environment variable `BR2_EXTERNAL`.
+modifications can be applied with the environment variable `BR2_EXTERNAL`.
 Read [here][br2_external] more about customizations of Buildroot.
 
 ```shell
-$ ./scripts/run.sh make "BR2_EXTERNAL=/root/buildroot/external docker_python2_defconfig menuconfig"
-$ ./scripts/run.sh make
+$ ./scripts/run.sh python2 make "BR2_EXTERNAL=/root/buildroot/external docker_python2_defconfig menuconfig"
+$ ./scripts/run.sh python2 make
 ```
 
 If you've modified the configuration using `menuconfig` and you want to save
 those changes run:
 
 ```shell
-$ ./scripts/run.sh make BR2_DEFCONFIG=/root/buildroot/external/configs/docker_python2_defconfig savedefconfig
+$ ./scripts/run.sh python2 make BR2_DEFCONFIG=/root/buildroot/external/configs/docker_python2_defconfig savedefconfig
 ```
 ## Docker image from root fileystem
-Import the root filesystem in to Docker to create an image run it and start
-a container.
+Import the root filesystem in to Docker to create an image, run it and start
+a container. Note that the images are now stored in the output directory for each firmware.
 
 ```shell
+# If using the host's images directory
 $ docker import - dietfs < images/rootfs.tar
+$ docker run --rm -ti dietfs sh
+
+# Or directly from the container volume
+$ docker import - dietfs < /buildroot_output_{firmware_name}/images/rootfs.tar
 $ docker run --rm -ti dietfs sh
 ```
 ## License

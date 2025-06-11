@@ -46,12 +46,11 @@ COPY systemtap.patch /root/systemtap.patch
 WORKDIR /root/buildroot
 RUN git apply ../systemtap.patch
 
-ENV O=/buildroot_output
-
+# O will be set dynamically in run.sh based on firmware name
 RUN touch .config
 RUN touch kernel.config
 
 VOLUME /root/buildroot/dl
-VOLUME /buildroot_output
+# Output directories will be created dynamically
 
 RUN ["/bin/bash"]

@@ -37,7 +37,7 @@ shift
 # Set output directory based on firmware name
 OUTPUT_DIR="/buildroot_output_${FIRMWARE_NAME}"
 BUILDROOT_DIR=/root/buildroot
-
+BUILDROOT_DL=buildroot_dl
 # Create output volume if it doesn't exist
 if ! docker volume inspect buildroot_output_${FIRMWARE_NAME} &>/dev/null; then
     echo "Creating volume buildroot_output_${FIRMWARE_NAME}"
@@ -45,20 +45,20 @@ if ! docker volume inspect buildroot_output_${FIRMWARE_NAME} &>/dev/null; then
 fi
 
 # Create dl volume if it doesn't exist
-if ! docker volume inspect buildroot_dl &>/dev/null; then
-    echo "Creating volume buildroot_dl"
-    docker volume create buildroot_dl
+if ! docker volume inspect ${BUILDROOT_DL} &>/dev/null; then
+    echo "Creating volume ${$BUILDROOT_DL}"
+    docker volume create {$BUILDROOT_DL}
 fi
 
 # Run the container with appropriate volumes
 DOCKER_RUN="docker run
     -ti
     --mount source=buildroot_output_${FIRMWARE_NAME},target=${OUTPUT_DIR}
-    --mount source=buildroot_dl,target=${BUILDROOT_DIR}/dl
+    --mount source=$BUILDROOT_DL,target=${BUILDROOT_DIR}/dl
     -v $(pwd)/data:${BUILDROOT_DIR}/data
     -v $(pwd)/external:${BUILDROOT_DIR}/external
     -v $(pwd)/rootfs_overlay:${BUILDROOT_DIR}/rootfs_overlay
-    -v $(pwd)/images:${OUTPUT_DIR}/images
+    -v $(pwd)/images_${FIRMWARE_NAME}:${OUTPUT_DIR}/images
     -e O=${OUTPUT_DIR}
     advancedclimatesystems/buildroot"
 

@@ -53,7 +53,6 @@ fi
 # Run the container with appropriate volumes
 DOCKER_RUN="docker run
     -ti
-    --rm
     --mount source=buildroot_output_${FIRMWARE_NAME},target=${OUTPUT_DIR}
     --mount source=$BUILDROOT_DL,target=${BUILDROOT_DIR}/dl
     -v $(pwd)/data:${BUILDROOT_DIR}/data
